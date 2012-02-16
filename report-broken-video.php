@@ -11,14 +11,6 @@ declare( encoding = 'UTF-8' );
  * Author URI:  http://toscho.de
  * License:     GPL
  *
- * @todo i18n
- *
- * @todo help tab
- * @todo link to settings in plugin row
- * @todo add icon to wp_head
- * @todo add icon to toolbar (multisite!)
- * @todo use icon in settings page
- *
  *
  * Report Broken Video, Copyright (C) 2012 Thomas Scholz
  *
@@ -85,6 +77,13 @@ class Report_Broken_Video
 		new self;
 	}
 
+	/**
+	 * Set actions, filters and basic variables, load language.
+	 *
+	 * @uses apply_filters() 'rbv_button' as action name
+	 * 		'rbv_auto_add_button' to append the form automatically
+	 * 		'rbv_post_types' for supported post types (default: 'post')
+	 */
 	public function __construct()
 	{
 		add_action( $this->prefix . '_button', array ( $this, 'print_button' ) );
@@ -104,16 +103,32 @@ class Report_Broken_Video
 		);
 	}
 
+	/**
+	 * Handler for the action 'rbv_button'. Prints the button.
+	 *
+	 * @return void
+	 */
 	public function print_button()
 	{
 		print $this->button_form();
 	}
 
+	/**
+	 * Handler for content filter.
+	 *
+	 * @param  string $content Existing content
+	 * @return string
+	 */
 	public function append_button( $content )
 	{
 		return $content . $this->button_form();
 	}
 
+	/**
+	 * Returns the button form or a feedback message after submit.
+	 *
+	 * @return string
+	 */
 	public function button_form()
 	{
 		if ( 'POST' != $_SERVER['REQUEST_METHOD'] )
@@ -123,6 +138,12 @@ class Report_Broken_Video
 		return $this->handle_submit();
 	}
 
+	/**
+	 * Returns the form or an empty string.
+	 *
+	 * @uses apply_filters() 'rbv_show_form' to suppress form output.
+	 * @return string
+	 */
 	public function get_form()
 	{
 		global $post;
@@ -154,6 +175,11 @@ RBVFORM;
 		return $form;
 	}
 
+	/**
+	 * Hidden text field as spam protection.
+	 *
+	 * @return string
+	 */
 	protected function get_hidden_field()
 	{
 		// prevent doubled IDs if you use the_content() on archive pages.
@@ -170,6 +196,8 @@ RBVFORM;
 	/**
 	 * Handle form submission.
 	 *
+	 * @uses apply_filters() 'rbv_recipient' to set the mail recipient.
+	 * 		'rbv_from' to set the 'From' header.
 	 * @return string
 	 */
 	protected function handle_submit()
