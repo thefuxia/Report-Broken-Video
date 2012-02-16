@@ -1,0 +1,215 @@
+<?php # -*- coding: utf-8 -*-
+declare( encoding = 'UTF-8' );
+/**
+ * Plugin Name: Report Broken Video
+ * Text Domain: plugin_rbv
+ * Domain Path: /lang
+ * Description: Adds a button to report broken videos
+ * Version:     2012.02.15
+ * Required:    3.3
+ * Author:      Thomas Scholz
+ * Author URI:  http://toscho.de
+ * License:     GPL
+ *
+ * @todo i18n
+ *
+ * @todo help tab
+ * @todo link to settings in plugin row
+ * @todo add icon to wp_head
+ * @todo add icon to toolbar (multisite!)
+ * @todo use icon in settings page
+ *
+ *
+ * Report Broken Video, Copyright (C) 2012 Thomas Scholz
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+! defined( 'ABSPATH' ) and exit;
+
+add_action( 'after_setup_theme', array ( 'Report_Broken_Video', 'init' ) );
+
+class Report_Broken_Video
+{
+	/**
+	 * Internal variables prefix.
+	 *
+	 * @type string
+	 */
+	protected $prefix = 'rbv';
+	/**
+	 * Name for a field that is hidden per CSS and filled by spammers only.
+	 *
+	 * @type string
+	 */
+	protected $hidden_field = 'no_fill';
+
+	/**
+	 * URL of the current page.
+	 *
+	 * @see __construct()
+	 * @type string
+	 */
+	protected $current_url = '';
+
+	/**
+	 * nonce = number used once, unique identifier for request validation.
+	 *
+	 * @type string
+	 */
+	protected $nonce_name = 'rbv_nonce';
+
+	/**
+	 * On which post types do we want to show the form?
+	 *
+	 * @type array
+	 */
+	protected $post_types = array ( 'post' );
+
+	/**
+	 * Creates a new instance. Called on 'after_setup_theme'.
+	 *
+	 * @see    __construct()
+	 * @return void
+	 */
+	public static function init()
+	{
+		new self;
+	}
+
+	public function __construct()
+	{
+		add_action( $this->prefix . '_button', array ( $this, 'print_button' ) );
+		$auto_add = apply_filters( $this->prefix . '_auto_add_button', TRUE );
+		$auto_add and add_filter( 'the_content', array ( $this, 'append_button' ), 50 );
+
+		$this->current_url = $_SERVER['REQUEST_URI'];
+		$this->post_types  = apply_filters(
+			$this->prefix . '_post_types',
+			$this->post_types
+		);
+
+		$lang_loaded       = load_plugin_textdomain(
+			'plugin_rbv',
+			FALSE,
+			basename( __DIR__ ) . '/lang'
+		);
+	}
+
+	public function print_button()
+	{
+		print $this->button_form();
+	}
+
+	public function append_button( $content )
+	{
+		return $content . $this->button_form();
+	}
+
+	public function button_form()
+	{
+		if ( 'POST' != $_SERVER['REQUEST_METHOD'] )
+		{
+			return $this->get_form();
+		}
+		return $this->handle_submit();
+	}
+
+	public function get_form()
+	{
+		global $post;
+
+		if ( empty ( $post )
+			or ! in_array( get_post_type( $post ), $this->post_types )
+			// You may disable the form conditionally. For example: restrict it
+			// to posts with post-format 'video'.
+			or ! apply_filters( $this->prefix . '_show_form', TRUE, $post )
+		)
+		{
+			return '';
+		}
+		$post_id = (int) $post->ID;
+
+		$url          = esc_attr( $this->current_url );
+		$hidden       = $this->get_hidden_field();
+		$nonce        = wp_create_nonce( __FILE__ );
+		$button_text  = __( 'Report broken video', 'plugin_rbv' );
+
+		$form = <<<RBVFORM
+<form method='post' action='$url' class='{$this->prefix}_form'>
+	<input type='hidden' name='{$this->prefix}[$this->nonce_name]' value='$nonce' />
+	<input type='hidden' name='{$this->prefix}[post_id]' value='$post_id' />
+	<input type='submit' name='{$this->prefix}[report]' value='$button_text' />
+</form>
+RBVFORM;
+
+		return $form;
+	}
+
+	protected function get_hidden_field()
+	{
+		// prevent doubled IDs if you use the_content() on archive pages.
+		static $counter = 0;
+		$field = $this->hidden_field . "_$counter";
+		$counter++;
+
+		$title = __( 'Leave this empty', 'plugin_rbv' );
+
+		return "<style scoped>#$field{display:none}</style>
+			<input name='{$this->prefix}[$field]' title='$title' />";
+	}
+
+	/**
+	 * Handle form submission.
+	 *
+	 * @return string
+	 */
+	protected function handle_submit()
+	{
+		if ( ! isset ( $_POST[ $this->prefix ] )
+			or '' == trim( implode( '', $_POST[ $this->prefix ] ) )
+			or ! wp_verify_nonce( $_POST[ $this->prefix ][ $this->nonce_name ], __FILE__ )
+			or ! empty ( $_POST[ $this->prefix ][ $this->hidden_field ] )
+			or   empty ( $_POST[ $this->prefix ][ 'post_id' ] )
+		)
+		{
+			return $this->get_form();
+		}
+
+		$blog_name = get_bloginfo( 'name' );
+		$url       = get_permalink( (int) $_POST[ $this->prefix ][ 'post_id' ] );
+
+		// Pro tempore. You may add an option for this in 'wp-admin'.
+		$recipient = get_option( 'admin_email' );
+		$recipient = apply_filters( $this->prefix . '_recipient', $recipient );
+
+		$subject   = sprintf(
+			__( 'Broken video on %s', 'plugin_rbv' ),
+			$blog_name
+		);
+		$message  = sprintf(
+			__( "There is a broken video on:\n <%s>", 'plugin_rbv' ),
+			$url
+		);
+		$from     = "From: [RBV] $blog_name <$recipient>";
+		$from     = apply_filters( $this->prefix . '_from', $from );
+		$send     = wp_mail( $recipient, $subject, $message, $from );
+
+		$error    = __(
+			'Sorry, we could not send the report. May we ask you to use the contact page instead?',
+			'plugin_rbv'
+		);
+		$success  = __( "Thank you! We will take a look.", 'plugin_rbv' );
+		$feedback = $send ? $success : $error;
+
+		return "<p class='{$this->prefix}_result'>$feedback</p>";
+	}
+}
