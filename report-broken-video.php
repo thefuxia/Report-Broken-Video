@@ -11,6 +11,7 @@ declare( encoding = 'UTF-8' );
  * Author URI:  http://toscho.de
  * License:     GPL
  *
+ * @todo remove button for already reported posts.
  *
  * Report Broken Video, Copyright (C) 2012 Thomas Scholz
  *
@@ -27,7 +28,7 @@ declare( encoding = 'UTF-8' );
 
 ! defined( 'ABSPATH' ) and exit;
 
-add_action( 'after_setup_theme', array ( 'Report_Broken_Video', 'init' ) );
+add_action( 'after_setup_theme', array ( 'Report_Broken_Video', 'get_instance' ) );
 
 class Report_Broken_Video
 {
@@ -72,9 +73,13 @@ class Report_Broken_Video
 	 * @see    __construct()
 	 * @return void
 	 */
-	public static function init()
+	public static function get_instance()
 	{
-		new self;
+		static $instance = NULL;
+
+		NULL === $instance and $instance = new self;
+
+		return $instance;
 	}
 
 	/**
@@ -121,6 +126,10 @@ class Report_Broken_Video
 	 */
 	public function append_button( $content )
 	{
+		if ( is_feed() )
+		{
+			return $content;
+		}
 		return $content . $this->button_form();
 	}
 
