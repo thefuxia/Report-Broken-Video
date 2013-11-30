@@ -5,7 +5,7 @@ declare( encoding = 'UTF-8' );
  * Text Domain: plugin_rbv
  * Domain Path: /lang
  * Description: Adds a button to report broken videos
- * Version:     2012.02.15
+ * Version:     2013.11.30
  * Required:    3.3
  * Author:      Thomas Scholz
  * Author URI:  http://toscho.de
