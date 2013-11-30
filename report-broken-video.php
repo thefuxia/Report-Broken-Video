@@ -112,12 +112,6 @@ class Report_Broken_Video
 			$this->prefix . '_post_types',
 			$this->post_types
 		);
-
-		load_plugin_textdomain(
-			'plugin_rbv',
-			FALSE,
-			basename( __DIR__ ) . '/lang'
-		);
 	}
 
 	/**
@@ -151,6 +145,8 @@ class Report_Broken_Video
 	 */
 	public function button_form()
 	{
+		$this->load_translation();
+
 		if ( 'POST' != $_SERVER['REQUEST_METHOD'] )
 			return $this->get_form();
 
@@ -253,5 +249,19 @@ RBVFORM;
 		$feedback = $send ? $success : $error;
 
 		return "<p class='{$this->prefix}_result'>$feedback</p>";
+	}
+
+	/**
+	 * Load translation.
+	 *
+	 * @return boolean
+	 */
+	private function load_translation()
+	{
+		return load_plugin_textdomain(
+			'plugin_rbv',
+			FALSE,
+			plugin_basename( __FILE__ ) . '/lang'
+		);
 	}
 }
