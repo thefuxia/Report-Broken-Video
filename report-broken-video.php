@@ -91,11 +91,22 @@ class Report_Broken_Video
 	 */
 	public function __construct()
 	{
+		// Use
+		// do_action( 'rbv_button' );
+		// in your theme to show the button.
 		add_action( $this->prefix . '_button', array ( $this, 'print_button' ) );
-		$auto_add = apply_filters( $this->prefix . '_auto_add_button', TRUE );
-		$auto_add and add_filter( 'the_content', array ( $this, 'append_button' ), 50 );
+
+		// Use
+		// add_filter( 'rbv_auto_add_button', '__return_false' );
+		// to turn automatic buttons off.
+		if ( apply_filters( $this->prefix . '_auto_add_button', TRUE ) )
+			add_filter( 'the_content', array ( $this, 'append_button' ), 50 );
 
 		$this->current_url = $_SERVER['REQUEST_URI'];
+
+		// Use
+		// add_filter( 'rbv_post_types', 'your_callback' );
+		// to add more post types.
 		$this->post_types  = apply_filters(
 			$this->prefix . '_post_types',
 			$this->post_types
