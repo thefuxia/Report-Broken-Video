@@ -38,6 +38,7 @@ class Report_Broken_Video
 	 * @type string
 	 */
 	protected $prefix = 'rbv';
+
 	/**
 	 * Name for a field that is hidden per CSS and filled by spammers only.
 	 *
@@ -112,7 +113,7 @@ class Report_Broken_Video
 			$this->post_types
 		);
 
-		$lang_loaded       = load_plugin_textdomain(
+		load_plugin_textdomain(
 			'plugin_rbv',
 			FALSE,
 			basename( __DIR__ ) . '/lang'
@@ -138,9 +139,8 @@ class Report_Broken_Video
 	public function append_button( $content )
 	{
 		if ( is_feed() )
-		{
 			return $content;
-		}
+
 		return $content . $this->button_form();
 	}
 
@@ -152,9 +152,8 @@ class Report_Broken_Video
 	public function button_form()
 	{
 		if ( 'POST' != $_SERVER['REQUEST_METHOD'] )
-		{
 			return $this->get_form();
-		}
+
 		return $this->handle_submit();
 	}
 
@@ -174,11 +173,9 @@ class Report_Broken_Video
 			// to posts with post-format 'video'.
 			or ! apply_filters( $this->prefix . '_show_form', TRUE, $post )
 		)
-		{
 			return '';
-		}
-		$post_id = (int) $post->ID;
 
+		$post_id      = (int) $post->ID;
 		$url          = esc_attr( $this->current_url );
 		$hidden       = $this->get_hidden_field();
 		$nonce        = wp_create_nonce( __FILE__ );
@@ -204,10 +201,10 @@ RBVFORM;
 	{
 		// prevent doubled IDs if you use the_content() on archive pages.
 		static $counter = 0;
-		$field = $this->hidden_field . "_$counter";
-		$counter++;
 
-		$title = __( 'Leave this empty', 'plugin_rbv' );
+		$field    = $this->hidden_field . "_$counter";
+		$counter += 1;
+		$title    = esc_attr__( 'Leave this empty', 'plugin_rbv' );
 
 		return "<style scoped>#$field{display:none}</style>
 			<input name='{$this->prefix}[$field]' title='$title' />";
@@ -228,12 +225,9 @@ RBVFORM;
 			or ! empty ( $_POST[ $this->prefix ][ $this->hidden_field ] )
 			or   empty ( $_POST[ $this->prefix ][ 'post_id' ] )
 		)
-		{
 			return $this->get_form();
-		}
 
 		$blog_name = get_bloginfo( 'name' );
-		$url       = get_permalink( (int) $_POST[ $this->prefix ][ 'post_id' ] );
 
 		// Pro tempore. You may add an option for this in 'wp-admin'.
 		$recipient = get_option( 'admin_email' );
@@ -245,7 +239,7 @@ RBVFORM;
 		);
 		$message  = sprintf(
 			__( "There is a broken video on:\n <%s>", 'plugin_rbv' ),
-			$url
+			get_permalink( (int) $_POST[ $this->prefix ][ 'post_id' ] )
 		);
 		$from     = "From: [RBV] $blog_name <$recipient>";
 		$from     = apply_filters( $this->prefix . '_from', $from );
