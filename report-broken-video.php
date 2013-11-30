@@ -37,14 +37,14 @@ class Report_Broken_Video
 	 *
 	 * @type string
 	 */
-	protected $prefix = 'rbv';
+	private $prefix = 'rbv';
 
 	/**
 	 * Name for a field that is hidden per CSS and filled by spammers only.
 	 *
 	 * @type string
 	 */
-	protected $hidden_field = 'no_fill';
+	private $hidden_field = 'no_fill';
 
 	/**
 	 * URL of the current page.
@@ -52,21 +52,21 @@ class Report_Broken_Video
 	 * @see __construct()
 	 * @type string
 	 */
-	protected $current_url = '';
+	private $current_url = '';
 
 	/**
 	 * nonce = number used once, unique identifier for request validation.
 	 *
 	 * @type string
 	 */
-	protected $nonce_name = 'rbv_nonce';
+	private $nonce_name = 'rbv_nonce';
 
 	/**
 	 * On which post types do we want to show the form?
 	 *
 	 * @type array
 	 */
-	protected $post_types = array ( 'post' );
+	private $post_types = array ( 'post' );
 
 	/**
 	 * Creates a new instance. Called on 'after_setup_theme'.
@@ -197,7 +197,7 @@ RBVFORM;
 	 *
 	 * @return string
 	 */
-	protected function get_hidden_field()
+	private function get_hidden_field()
 	{
 		// prevent doubled IDs if you use the_content() on archive pages.
 		static $counter = 0;
@@ -217,7 +217,7 @@ RBVFORM;
 	 * 		'rbv_from' to set the 'From' header.
 	 * @return string
 	 */
-	protected function handle_submit()
+	private function handle_submit()
 	{
 		if ( ! isset ( $_POST[ $this->prefix ] )
 			or '' == trim( implode( '', $_POST[ $this->prefix ] ) )
